@@ -1,0 +1,89 @@
+version: "3.9"
+
+services:
+  api:
+    container_name: iam_api
+    build:
+      context: .
+      dockerfile: Docker/dockerfile/DockerfileApp
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./Docker/php/php.ini:/usr/local/etc/php/app.conf/php.ini
+    depends_on:
+      - server
+      - redis
+      - database
+    networks:
+      - iam_network
+
+  server:
+    container_name: iam_server
+    build:
+      context: .
+      dockerfile: Docker/dockerfile/DockerfileServer
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "81:80"
+      - "444:443"
+    volumes:
+      - ./:/var/www
+      - ./Docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - iam_network
+
+  redis:
+    container_name: iam_redis
+    image: redis:latest
+    restart: always
+    tty: true
+    env_file:
+      - .env
+    ports:
+      - "6380:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - iam_network
+
+  database:
+    container_name: iam_mysql
+    image: mysql:5.7.22
+    restart: always
+    stdin_open: true
+    tty: true
+    env_file:
+      - .env
+    ports:
+      - "3307:3306"
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - database:/var/lib/mysql/
+      - ./Docker/mysql/mysql.conf:/etc/mysql/mysql.conf
+      - ./Docker/mysql/db/:/docker-entrypoint-initdb.d/
+    environment:
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - SERVICE_TAGS=${APP_ENV}
+      - SERVICE_NAME=mysql
+    networks:
+      - iam_network
+
+networks:
+  iam_network:
+    name: iam_network
+    driver: bridge
+
+volumes:
+  database:
+    driver: local
+  redis:
+    driver: local

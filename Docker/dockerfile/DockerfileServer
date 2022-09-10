@@ -1,0 +1,13 @@
+# Pull letest nginx version
+FROM nginx:latest
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    vim
+
+# Copy certificate
+COPY ../../Docker/nginx/localhost.crt /etc/nginx/certs/localhost.crt
+COPY ../../Docker/nginx/localhost.key /etc/nginx/certs/localhost.key
+
+# Set working directory
+WORKDIR /var/www
