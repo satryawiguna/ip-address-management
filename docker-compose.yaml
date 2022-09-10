@@ -31,6 +31,7 @@ services:
       - "444:443"
     volumes:
       - ./:/var/www
+      - ./Docker/nginx/conf.d/:/etc/nginx/conf.d/
     networks:
       - iam_network
 
@@ -65,7 +66,7 @@ services:
     volumes:
       - database:/var/lib/mysql/
       - ./Docker/mysql/mysql.conf:/etc/mysql/mysql.conf
-      - ./Docker/mysql/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./Docker/mysql/db/:/docker-entrypoint-initdb.d/
     environment:
       - MYSQL_USER=${DB_USERNAME}
       - MYSQL_PASSWORD=${DB_PASSWORD}
