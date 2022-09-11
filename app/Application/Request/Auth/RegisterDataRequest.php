@@ -4,7 +4,9 @@ namespace App\Application\Request\Auth;
 
 class RegisterDataRequest
 {
-    public string $name;
+    public ?string $fullName;
+
+    public ?string $nickName;
 
     public string $email;
 
@@ -13,19 +15,35 @@ class RegisterDataRequest
     public string $confirmPassword;
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getName(): string
+    public function getFullName(): ?string
     {
-        return $this->name;
+        return $this->fullName;
     }
 
     /**
-     * @param string $name
+     * @param string|null $fullName
      */
-    public function setName(string $name): void
+    public function setFullName(?string $fullName): void
     {
-        $this->name = $name;
+        $this->fullName = $fullName;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getNickName(): ?string
+    {
+        return $this->nickName;
+    }
+
+    /**
+     * @param string|null $nickName
+     */
+    public function setNickName(?string $nickName): void
+    {
+        $this->nickName = $nickName;
     }
 
     /**
