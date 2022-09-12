@@ -5,8 +5,8 @@ namespace App\Repository;
 use App\Core\Application\Request\AuditableRequest;
 use App\Core\Domain\BaseEntity;
 use App\Core\Domain\Contract\IRepository;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 abstract class BaseRepository implements IRepository
 {
@@ -20,8 +20,10 @@ abstract class BaseRepository implements IRepository
         $this->model = $model;
     }
 
-    public function all(): Collection {
-        return $this->model->all();
+    public function all(string $order = "id", string $sort = "asc"): Collection {
+        return $this->model
+            ->orderBy($order, $sort)
+            ->all();
     }
 
     public function read(int|string $id): BaseEntity {

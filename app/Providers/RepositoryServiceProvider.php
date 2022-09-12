@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Repository\AuditLogRepository;
+use App\Repository\Contract\IAuditLogRepository;
 use App\Repository\Contract\IUserRepository;
 use App\Repository\UserRepository;
 use Illuminate\Support\ServiceProvider;
@@ -16,6 +18,7 @@ class RepositoryServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind(IUserRepository::class, UserRepository::class);
+        $this->app->bind(IAuditLogRepository::class, AuditLogRepository::class);
     }
 
     /**
