@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('ip_addresses', function (Blueprint $table) {
             $table->id();
-            $table->string("ipv4", 32);
+            $table->string("ipv4", 32)->unique();
             $table->string('created_by');
             $table->string('updated_by')->nullable();
 

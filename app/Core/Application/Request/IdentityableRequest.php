@@ -2,7 +2,7 @@
 
 namespace App\Core\Application\Request;
 
-class IdentityableRequest
+class IdentityableRequest extends AuditableRequest
 {
     public int $id;
 

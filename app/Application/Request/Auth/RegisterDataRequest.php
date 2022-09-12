@@ -2,32 +2,34 @@
 
 namespace App\Application\Request\Auth;
 
-class RegisterDataRequest
+use App\Core\Application\Request\AuditableRequest;
+
+class RegisterDataRequest extends AuditableRequest
 {
-    public ?string $fullName;
+    public ?string $full_name;
 
-    public ?string $nickName;
+    public ?string $nick_name;
 
-    public string $email;
+    public ?string $email;
 
-    public string $password;
+    public ?string $password;
 
-    public string $confirmPassword;
+    public ?string $confirm_password;
 
     /**
      * @return string|null
      */
     public function getFullName(): ?string
     {
-        return $this->fullName;
+        return $this->full_name;
     }
 
     /**
-     * @param string|null $fullName
+     * @param string|null $full_name
      */
-    public function setFullName(?string $fullName): void
+    public function setFullName(?string $full_name): void
     {
-        $this->fullName = $fullName;
+        $this->full_name = $full_name;
     }
 
     /**
@@ -35,62 +37,64 @@ class RegisterDataRequest
      */
     public function getNickName(): ?string
     {
-        return $this->nickName;
+        return $this->nick_name;
     }
 
     /**
-     * @param string|null $nickName
+     * @param string|null $nick_name
      */
-    public function setNickName(?string $nickName): void
+    public function setNickName(?string $nick_name): void
     {
-        $this->nickName = $nickName;
+        $this->nick_name = $nick_name;
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getEmail(): string
+    public function getEmail(): ?string
     {
         return $this->email;
     }
 
     /**
-     * @param string $email
+     * @param string|null $email
      */
-    public function setEmail(string $email): void
+    public function setEmail(?string $email): void
     {
         $this->email = $email;
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getPassword(): string
+    public function getPassword(): ?string
     {
         return $this->password;
     }
 
     /**
-     * @param string $password
+     * @param string|null $password
      */
-    public function setPassword(string $password): void
+    public function setPassword(?string $password): void
     {
         $this->password = $password;
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getConfirmPassword(): string
+    public function getConfirmPassword(): ?string
     {
-        return $this->confirmPassword;
+        return $this->confirm_password;
     }
 
     /**
-     * @param string $confirmPassword
+     * @param string|null $confirm_password
      */
-    public function setConfirmPassword(string $confirmPassword): void
+    public function setConfirmPassword(?string $confirm_password): void
     {
-        $this->confirmPassword = $confirmPassword;
+        $this->confirm_password = $confirm_password;
     }
+
+    protected function validate(): void {}
 }
