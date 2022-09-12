@@ -18,21 +18,39 @@ class AuditLogRepository extends BaseRepository implements IAuditLogRepository
         $this->auditLog = $auditLog;
     }
 
-    public function allSearch(string $keyword, string $order = "id", string $sort = "asc"): Collection
+    public function allSearch(string $keyword, string $order = "id", string $sort = "asc", array $args = []): Collection
     {
         $parameter = $this->getParameter($keyword);
 
-        return $this->auditLog->whereRaw("(tag LIKE ? OR context LIKE ?)", $parameter)
-            ->orderBy($order, $sort)
+        $result = $this->auditLog->whereRaw("(tag LIKE ? OR context LIKE ?)", $parameter);
+
+        if (array_key_exists("type", $args)) {
+            $result = $result->where("audit_logable_type", $args["type"]);
+        }
+
+        if (array_key_exists("level", $args)) {
+            $result = $result->where("level", $args["level"]);
+        }
+
+        return $result->orderBy($order, $sort)
             ->get();
     }
 
-    public function allSearchPage(string $keyword, int $perPage, int $page, string $order = "id", string $sort = "asc"): Collection
+    public function allSearchPage(string $keyword, int $perPage, int $page, string $order = "id", string $sort = "asc", array $args = []): Collection
     {
         $parameter = $this->getParameter($keyword);
 
-        return $this->auditLog->whereRaw("(tag LIKE ? OR context LIKE ?)", $parameter)
-            ->orderBy($order, $sort)
+        $result = $this->auditLog->whereRaw("(tag LIKE ? OR context LIKE ?)", $parameter);
+
+        if (array_key_exists("type", $args)) {
+            $result = $result->where("audit_logable_type", $args["type"]);
+        }
+
+        if (array_key_exists("level", $args)) {
+            $result = $result->where("level", $args["level"]);
+        }
+
+        return  $result->orderBy($order, $sort)
             ->simplePaginate(perPage: $perPage, page: $page);
     }
 
@@ -54,7 +72,7 @@ class AuditLogRepository extends BaseRepository implements IAuditLogRepository
 
     private function getParameter(string $keyword) {
         return [
-            'tag' => '%' . $keyword . '%',
+            'message' => '%' . $keyword . '%',
             'context' => '%' . $keyword . '%'
         ];
     }

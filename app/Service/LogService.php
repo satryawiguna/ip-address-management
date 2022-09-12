@@ -29,9 +29,9 @@ class LogService implements ILogService
         $response = new GenericListResponse();
 
         try {
-            $allResponse = $this->auditLogRepository->all();
+            $auditLogs = $this->auditLogRepository->all();
 
-            $response->dtoList = $allResponse;
+            $response->dtoList = $auditLogs;
             $response->setType("SUCCESS");
             $response->setCodeStatus(HttpResponseType::SUCCESS->value);
 
@@ -46,15 +46,15 @@ class LogService implements ILogService
         return $response;
     }
 
-    public function getAllSearch(SearchRequest $searchRequest): GenericListSearchResponse
+    public function getSearch(SearchRequest $searchRequest): GenericListSearchResponse
     {
         $response = new GenericListSearchResponse();
 
         try {
-            $allResponse = $this->auditLogRepository->allSearch($searchRequest->getSearch());
+            $auditLogs = $this->auditLogRepository->allSearch($searchRequest->getSearch());
 
-            $response->dtoListSearch = $allResponse;
-            $response->totalCount = $allResponse->count();
+            $response->dtoListSearch = $auditLogs;
+            $response->totalCount = $auditLogs->count();
             $response->setType("SUCCESS");
             $response->setCodeStatus(HttpResponseType::SUCCESS->value);
 
@@ -69,17 +69,17 @@ class LogService implements ILogService
         return $response;
     }
 
-    public function getAllSearchPage(SearchPageRequest $searchPageRequest): GenericListSearchPageResponse
+    public function getSearchPage(SearchPageRequest $searchPageRequest): GenericListSearchPageResponse
     {
         $response = new GenericListSearchPageResponse();
 
         try {
-            $allResponse = $this->auditLogRepository->allSearchPage($searchPageRequest->getSearch(),
+            $auditLogs = $this->auditLogRepository->allSearchPage($searchPageRequest->getSearch(),
                 $searchPageRequest->getPerPage(),
                 $searchPageRequest->getPage());
 
-            $response->dtoListSearch = $allResponse;
-            $response->totalCount = $allResponse->count();
+            $response->dtoListSearchPage = $auditLogs;
+            $response->totalCount = $auditLogs->count();
             $response->setType("SUCCESS");
             $response->setCodeStatus(HttpResponseType::SUCCESS->value);
 

@@ -10,7 +10,7 @@ trait RequestAuthor
     protected function setRequestAuthor(AuditableRequest $request)
     {
         if (Auth::user()) {
-            $request->request_by = Auth::user()->name;
+            $request->request_by = explode("@", Auth::user()->email)[0];
         } else {
             $request->request_by = 'system';
         }

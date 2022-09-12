@@ -9,5 +9,5 @@ interface IRepository
 {
     public function all(string $order = "id", string $sort = "asc"): Collection;
 
-    public function read(int|string $id): BaseEntity;
+    public function findById(int|string $id): BaseEntity|null;
 }

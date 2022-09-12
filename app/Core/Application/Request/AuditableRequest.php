@@ -19,4 +19,6 @@ abstract class AuditableRequest
     {
         $this->request_by = $request_by;
     }
+
+    protected function validate(): void {}
 }
