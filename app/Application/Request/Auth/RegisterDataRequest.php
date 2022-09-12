@@ -95,6 +95,4 @@ class RegisterDataRequest extends AuditableRequest
     {
         $this->confirm_password = $confirm_password;
     }
-
-    protected function validate(): void {}
 }

@@ -3,8 +3,9 @@
 namespace App\Repository;
 
 use App\Application\Request\CreateIpAddressDataRequest;
-use App\Application\Request\CreateLabeldataRequest;
+use App\Application\Request\CreateLabelDataRequest;
 use App\Application\Request\UpdateIpAddressDataRequest;
+use App\Application\Request\UpdateLabelDataRequest;
 use App\Core\Domain\BaseEntity;
 use App\Domain\IpAddress;
 use App\Presentation\Http\Controllers\RequestAuthor;
@@ -31,7 +32,7 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
 
     public function findById(int|string $id): BaseEntity|null
     {
-        return $this->ipAddress->with(["labels"])
+         $this->ipAddress->with(["labels", "auditLogs"])
             ->find($id);
     }
 
@@ -75,20 +76,26 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
 
         $this->setAuditableInformationFromRequest($ipAddress, $request);
 
-        $label = $this->labelRepository->findByTitle($request->label);
+        $labels = new Collection();
 
-        if (!$label) {
-            $createLabelDataRequest = new CreateLabeldataRequest();
-            $createLabelDataRequest->setTitle($request->getLabel());
+        foreach ($request->getLabel()->toArray() as $item) {
+            if ($item->id > 0) {
+                $label = $this->labelRepository->findById($item->id);
+            } else {
+                $createLabelDataRequest = new CreateLabelDataRequest();
+                $createLabelDataRequest->setTitle($item->title);
 
-            $this->setRequestAuthor($createLabelDataRequest);
+                $this->setRequestAuthor($createLabelDataRequest);
 
-            $label = $this->labelRepository->save($createLabelDataRequest);
+                $label = $this->labelRepository->save($createLabelDataRequest);
+            }
+
+            $labels->push($label->id);
         }
 
         $ipAddress->save();
 
-        $ipAddress->labels()->attach($label);
+        $ipAddress->labels()->attach($labels->toArray());
 
         return $ipAddress->fresh();
     }
@@ -101,24 +108,28 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
             return null;
         }
 
-        $ipAddress->setAttributes([
-            "ipv4" => $request->getIpv4()
-        ]);
-
         $this->setAuditableInformationFromRequest($ipAddress, $request);
 
-        $label = $this->labelRepository->findByTitle($request->label);
+        $labels = new Collection();
 
-        if (!$label) {
-            $createLabelDataRequest = new CreateLabeldataRequest();
-            $createLabelDataRequest->setTitle($request->getLabel());
+        foreach ($request->getLabel()->toArray() as $item) {
+            if ($item->id > 0) {
+                $label = $this->labelRepository->findById($item->id);
+            } else {
+                $createLabelDataRequest = new CreateLabelDataRequest();
+                $createLabelDataRequest->setTitle($item->title);
 
-            $label = $this->labelRepository->save($createLabelDataRequest);
+                $this->setRequestAuthor($createLabelDataRequest);
+
+                $label = $this->labelRepository->save($createLabelDataRequest);
+            }
+
+            $labels->push($label->id);
         }
 
         $ipAddress->save();
 
-        $ipAddress->labels->sync($label);
+        $ipAddress->labels->sync($labels->toArray());
 
         return $ipAddress->fresh();
     }

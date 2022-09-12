@@ -65,6 +65,16 @@ class ManageService implements IManageService
         try {
             $ipAddress = $this->ipAddressRepository->findById($id);
 
+            if (!$ipAddress) {
+                $response->addErrorMessageResponse("Ip Address not found");
+                $response->setType("ERROR");
+                $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
+
+                Log::info("Ip Address not found", $response->getMessageResponseError());
+
+                return $response;
+            }
+
             $response->dto = $ipAddress;
             $response->setType("SUCCESS");
             $response->setCodeStatus(HttpResponseType::SUCCESS->value);
@@ -141,7 +151,7 @@ class ManageService implements IManageService
         try {
             $brokenRules = $request->getBrokenRules([
                 'ipv4' => 'required|string|unique:ip_addresses|ip',
-                'label' => 'required|string'
+                'label' => 'required'
             ]);
 
             if ($brokenRules->fails()) {
@@ -157,6 +167,26 @@ class ManageService implements IManageService
                 Log::info("Invalid field validation", $response->getMessageResponseError());
 
                 return $response;
+            }
+
+            foreach ($request->getLabel()->toArray() as $label) {
+                $rule = ($label->id > 0) ? ['title' => 'required|string'] : ['title' => 'required|string|unique:labels'];
+                $brokenRules = $label->getBrokenRules($rule);
+
+                if ($brokenRules->fails()) {
+                    foreach ($brokenRules->errors()->getMessages() as $key => $value) {
+                        foreach ($value as $message) {
+                            $response->addErrorMessageResponse($message);
+                        }
+                    }
+
+                    $response->setType("ERROR");
+                    $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
+
+                    Log::info("Invalid field validation", $response->getMessageResponseError());
+
+                    return $response;
+                }
             }
 
             $user = Auth::user();
@@ -176,7 +206,7 @@ class ManageService implements IManageService
                 ->setLevel(LogLevel::INFO->value)
                 ->setLoggedAt(Carbon::now()->toDateTimeString())
                 ->setMessage("User $user->id: Store $ipAddress->ipv4 | $request->label succeed")
-                ->setContext(["ipv4" => $ipAddress->ipv4]);
+                ->setContext(["ipv4" => $ipAddress->ipv4, "label" => $request->label]);
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
         } catch (Exception $ex) {
@@ -201,6 +231,8 @@ class ManageService implements IManageService
         DB::beginTransaction();
 
         try {
+            $user = Auth::user();
+
             $ipAddress = $this->ipAddressRepository->update($request);
 
             if (!$ipAddress) {
@@ -209,7 +241,22 @@ class ManageService implements IManageService
                 $response->setCodeStatus(HttpResponseType::NOT_FOUND->value);
             }
 
+            $response->dto = $ipAddress;
+            $response->addSuccessMessageResponse('Ip Address update succeed');
+            $response->setType("SUCCESS");
+            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
 
+            Log::info("Ip Address update succeed");
+
+            $logActivity = (new LogActivityBuilder())
+                ->setAuditLogableId($ipAddress->id)
+                ->setAuditLogableType("Domain/IpAddress")
+                ->setLevel(LogLevel::INFO->value)
+                ->setLoggedAt(Carbon::now()->toDateTimeString())
+                ->setMessage("User $user->id: Update $ipAddress->ipv4 | $request->label succeed")
+                ->setContext(["ipv4" => $ipAddress->ipv4, "label" => $request->label]);
+
+            $this->auditLogRepository->writeLogActivity($logActivity->build());
 
         } catch (Exception $ex) {
             DB::rollBack();

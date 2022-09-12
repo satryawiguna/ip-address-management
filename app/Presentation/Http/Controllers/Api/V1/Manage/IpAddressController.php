@@ -3,11 +3,15 @@
 namespace App\Presentation\Http\Controllers\Api\V1\Manage;
 
 use App\Application\Request\CreateIpAddressDataRequest;
+use App\Application\Request\CreateLabelDataRequest;
+use App\Application\Request\UpdateIpAddressDataRequest;
+use App\Application\Request\UpdateLabelDataRequest;
 use App\Core\Application\Request\SearchPageRequest;
 use App\Core\Application\Request\SearchRequest;
 use App\Presentation\Http\Controllers\Api\ApiBaseController;
 use App\Service\Contract\IManageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class IpAddressController extends ApiBaseController
 {
@@ -59,7 +63,22 @@ class IpAddressController extends ApiBaseController
     public function actionStore(Request $request) {
         $createIpAddressDataRequest = new CreateIpAddressDataRequest();
         $createIpAddressDataRequest->setIpv4((string) $request->input("ipv4"));
-        $createIpAddressDataRequest->setLabel((string) $request->input("label"));
+
+        $labels = new Collection();
+
+        if (is_array($request->input("label"))) {
+            foreach ($request->input("label") as $label) {
+                $createLabelDataRequest = new CreateLabelDataRequest();
+                $createLabelDataRequest->setId($label["id"]);
+                $createLabelDataRequest->setTitle((string) $label["title"]);
+
+                $this->setRequestAuthor($createLabelDataRequest);
+
+                $labels->push($createLabelDataRequest);
+            }
+        }
+
+        $createIpAddressDataRequest->setLabel($labels);
 
         $this->setRequestAuthor($createIpAddressDataRequest);
 
@@ -70,5 +89,44 @@ class IpAddressController extends ApiBaseController
         }
 
         return $this->getObjectJsonResponse($storeIpAddressResponse);
+    }
+
+    public function actionUpdate(Request $request, int $id) {
+        $updateIpAddressDataRequest = new UpdateIpAddressDataRequest();
+        $updateIpAddressDataRequest->setId($id);
+
+        $labels = new Collection();
+
+        if (is_array($request->input("label"))) {
+            foreach ($request->input("label") as $label) {
+                $updateLabelDataRequest = new UpdateLabelDataRequest();
+                $updateLabelDataRequest->setId($label["id"]);
+                $updateLabelDataRequest->setTitle((string) $label["title"]);
+
+                $this->setRequestAuthor($updateLabelDataRequest);
+
+                $labels->push($updateLabelDataRequest);
+            }
+        }
+
+        $this->setRequestAuthor($updateIpAddressDataRequest);
+
+        $updateIpAddressResponse = $this->manageService->updateIpAddress($updateIpAddressDataRequest);
+
+        if ($updateIpAddressResponse->isError()) {
+            return $this->getErrorJsonResponse($updateIpAddressResponse);
+        }
+
+        return $this->getObjectJsonResponse($updateIpAddressResponse);
+    }
+
+    public function actionGet(int $id) {
+        $ipAddress = $this->manageService->getIpAddressById($id);
+
+        if ($ipAddress->isError()) {
+            return $this->getErrorJsonResponse($ipAddress);
+        }
+
+        return $this->getObjectJsonResponse($ipAddress);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Repository;
 
-use App\Application\Request\CreateLabeldataRequest;
+use App\Application\Request\CreateLabelDataRequest;
 use App\Core\Domain\BaseEntity;
 use App\Domain\Label;
 use App\Repository\Contract\ILabelRepository;
@@ -29,7 +29,7 @@ class LabelRepository extends BaseRepository implements ILabelRepository
         return $label->last();
     }
 
-    public function save(CreateLabeldataRequest $request): BaseEntity
+    public function save(CreateLabelDataRequest $request): BaseEntity
     {
         $label = new $this->label([
             "title" => $request->getTitle()

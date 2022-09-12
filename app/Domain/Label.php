@@ -22,6 +22,6 @@ class Label extends BaseEntity
     ];
 
     public function ipAddresses() {
-        return $this->belongsToMany(IpAddress::class);
+        return $this->belongsToMany(IpAddress::class, "ip_address_labels");
     }
 }

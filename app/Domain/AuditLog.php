@@ -21,4 +21,8 @@ class AuditLog extends BaseEntity
     ];
 
     public $timestamps = false;
+
+    public function auditLogable() {
+        return $this->morphTo();
+    }
 }

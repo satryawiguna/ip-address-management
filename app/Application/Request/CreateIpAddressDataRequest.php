@@ -3,12 +3,13 @@
 namespace App\Application\Request;
 
 use App\Core\Application\Request\AuditableRequest;
+use Illuminate\Support\Collection;
 
 class CreateIpAddressDataRequest extends AuditableRequest
 {
     public string $ipv4;
 
-    public string $label;
+    public Collection $label;
 
     public function getIpv4(): string
     {
@@ -20,15 +21,13 @@ class CreateIpAddressDataRequest extends AuditableRequest
         $this->ipv4 = $ipv4;
     }
 
-    public function getLabel(): string
+    public function getLabel(): Collection
     {
         return $this->label;
     }
 
-    public function setLabel(string $label): void
+    public function setLabel(Collection $label): void
     {
         $this->label = $label;
     }
-
-    protected function validate(): void {}
 }

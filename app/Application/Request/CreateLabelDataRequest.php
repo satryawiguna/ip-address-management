@@ -2,9 +2,9 @@
 
 namespace App\Application\Request;
 
-use App\Core\Application\Request\AuditableRequest;
+use App\Core\Application\Request\IdentityableRequest;
 
-class CreateLabeldataRequest extends AuditableRequest
+class CreateLabelDataRequest extends IdentityableRequest
 {
     public string $title;
 
@@ -17,6 +17,4 @@ class CreateLabeldataRequest extends AuditableRequest
     {
         $this->title = $title;
     }
-
-    protected function validate(): void {}
 }
