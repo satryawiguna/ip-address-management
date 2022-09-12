@@ -8,7 +8,7 @@ class GenericListSearchPageResponse extends BasicResponse
 {
     public int $totalCount;
 
-    public object $meta;
+    public array $meta;
 
     public Collection $dtoListSearchPage;
 

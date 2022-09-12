@@ -20,4 +20,8 @@ class IpAddress extends BaseEntity
         'created_by',
         'updated_by'
     ];
+
+    public function labels() {
+        return $this->belongsToMany(Label::class);
+    }
 }

@@ -14,7 +14,7 @@ interface ILogService
 {
     public function getAll(): GenericListResponse;
 
-    public function getAllSearch(SearchRequest $searchRequest): GenericListSearchResponse;
+    public function getSearch(SearchRequest $searchRequest): GenericListSearchResponse;
 
-    public function getAllSearchPage(SearchPageRequest $searchPageRequest): GenericListSearchPageResponse;
+    public function getSearchPage(SearchPageRequest $searchPageRequest): GenericListSearchPageResponse;
 }

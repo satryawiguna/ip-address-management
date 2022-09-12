@@ -14,12 +14,10 @@ return new class extends Migration
     public function up()
     {
         Schema::create('ip_address_labels', function (Blueprint $table) {
-            $table->unsignedBigInteger("ip_address_id")->unique();
-            $table->unsignedBigInteger("label_id");
+            $table->foreignId('ip_address_id')->constrained('ip_addresses');
+            $table->foreignId('label_id')->constrained('labels');
 
-            $table->foreign('ip_address_id')->references('id')->on('ip_addresses')
-                ->onDelete('CASCADE');
-            $table->foreign('label_id')->references('id')->on('labels');
+            $table->unique(["ip_address_id"]);
         });
     }
 

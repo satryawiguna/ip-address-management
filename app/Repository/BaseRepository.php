@@ -23,10 +23,10 @@ abstract class BaseRepository implements IRepository
     public function all(string $order = "id", string $sort = "asc"): Collection {
         return $this->model
             ->orderBy($order, $sort)
-            ->all();
+            ->get();
     }
 
-    public function read(int|string $id): BaseEntity {
+    public function findById(int|string $id): BaseEntity|null {
         return $this->model->find($id);
     }
 
