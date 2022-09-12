@@ -2,8 +2,12 @@
 
 namespace App\Core\Application\Request;
 
-class AuditableRequest
+use App\Core\Domain\BrokenRule;
+
+abstract class AuditableRequest
 {
+    use BrokenRule;
+
     public ?string $request_by;
 
     public function getRequestBy(): string

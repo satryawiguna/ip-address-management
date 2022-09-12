@@ -13,12 +13,12 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('logs', function (Blueprint $table) {
+        Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger("logable_id");
-            $table->string("logable_type");
+            $table->bigInteger("audit_logable_id");
+            $table->string("audit_logable_type");
             $table->enum("level", ["FATAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE"]);
-            $table->string("log");
+            $table->string("tag");
             $table->string("context");
 
             $table->nullableTimestamps();
@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('logs');
+        Schema::dropIfExists('audit_logs');
     }
 };

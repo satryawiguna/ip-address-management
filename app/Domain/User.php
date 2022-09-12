@@ -2,16 +2,22 @@
 
 namespace App\Domain;
 
- use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Core\Domain\BaseAuthEntity;
 use App\Core\Domain\Contract\IAggregateRoot;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Passport\HasApiTokens;
+
 
 class User extends BaseAuthEntity implements IAggregateRoot, MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
+
+    const TABLE_NAME = 'users';
+    const MORPH_NAME = 'users';
+
+    protected $table = User::TABLE_NAME;
 
     /**
      * The attributes that are mass assignable.
@@ -19,9 +25,18 @@ class User extends BaseAuthEntity implements IAggregateRoot, MustVerifyEmail
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'full_name',
+        'nick_name',
         'email',
         'password',
+        'created_by',
+        'updated_by'
+    ];
+
+    public $timestamps = false;
+
+    protected $dates = [
+        'deleted_at'
     ];
 
     /**
@@ -42,4 +57,9 @@ class User extends BaseAuthEntity implements IAggregateRoot, MustVerifyEmail
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function oAuth()
+    {
+        return $this->hasMany(OAuth::class, 'user_id');
+    }
 }
