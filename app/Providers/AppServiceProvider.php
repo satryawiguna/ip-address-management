@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Service\AuthService;
 use App\Service\Contract\IAuthService;
+use App\Service\Contract\ILogService;
 use App\Service\Contract\IUserService;
+use App\Service\LogService;
 use App\Service\UserService;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(IUserService::class, UserService::class);
         $this->app->bind(IAuthService::class, AuthService::class);
+        $this->app->bind(ILogService::class, LogService::class);
     }
 
     /**

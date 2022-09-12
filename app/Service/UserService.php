@@ -18,7 +18,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class UserService extends BaseService implements IUserService
+class UserService implements IUserService
 {
     public IUserRepository $userRepository;
 
@@ -28,21 +28,6 @@ class UserService extends BaseService implements IUserService
     public function __construct(IUserRepository $userRepository)
     {
         $this->userRepository = $userRepository;
-    }
-
-    public function getAll(): GenericListResponse
-    {
-        // TODO: Implement getAll() method.
-    }
-
-    public function getAllSearch(SearchRequest $searchRequest): GenericListSearchResponse
-    {
-        // TODO: Implement getAllSearch() method.
-    }
-
-    public function getAllSearchPage(SearchPageRequest $searchPageRequest): GenericListSearchPageResponse
-    {
-        // TODO: Implement getAllSearchPage() method.
     }
 
     public function register(RegisterDataRequest $request): GenericObjectResponse
@@ -68,7 +53,7 @@ class UserService extends BaseService implements IUserService
                 $response->setType("ERROR");
                 $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
 
-                Log::info(implode(", ", $response->getMessageResponseError()));
+                Log::info("Invalid field validation", $response->getMessageResponseError());
 
                 return $response;
             }
@@ -84,11 +69,12 @@ class UserService extends BaseService implements IUserService
 
         } catch (Exception $ex) {
             DB::rollBack();
-            Log::info($ex->getMessage());
 
             $response->addErrorMessageResponse($ex->getMessage());
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+
+            Log::info($ex->getMessage());
         }
 
         DB::commit();

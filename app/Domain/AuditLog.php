@@ -12,18 +12,13 @@ class AuditLog extends BaseEntity
     protected $table = AuditLog::TABLE_NAME;
 
     protected $fillable = [
-        'audi_logable_id',
-        'audi_logable_type',
+        'audit_logable_id',
+        'audit_logable_type',
         'level',
-        'tag',
-        'context',
-        'created_by',
-        'updated_by'
+        'logged_at',
+        'message',
+        'context'
     ];
 
     public $timestamps = false;
-
-    protected $dates = [
-        'deleted_at'
-    ];
 }

@@ -8,7 +8,6 @@ use App\Presentation\Http\Controllers\Api\ApiBaseController;
 use App\Service\Contract\IAuthService;
 use App\Service\Contract\IUserService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 
 class AuthController extends ApiBaseController

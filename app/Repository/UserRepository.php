@@ -18,29 +18,13 @@ class UserRepository extends BaseRepository implements IUserRepository
         $this->user = $user;
     }
 
-    public function allSearch(string $keyword): Collection
-    {
-        $parameter = $this->getParameter($keyword);
-
-        return $this->user->whereRaw("(name LIKE ? OR email LIKE ?)", $parameter)
-            ->get();
-    }
-
-    public function allSearchPage(string $keyword, int $perPage, int $page): Collection
-    {
-        $parameter = $this->getParameter($keyword);
-
-        return $this->user->whereRaw("(name LIKE ? OR email LIKE ?)", $parameter)
-            ->simplePaginate(perPage: $perPage, page: $page);
-    }
-
     public function register(RegisterDataRequest $request): BaseEntity
     {
-        $user = new $this->user;
-
-        $user->full_name = $request->getFullName();
-        $user->nick_name = $request->getNickName();
-        $user->email = $request->getEmail();
+        $user = new $this->user([
+            "full_name" => $request->getFullName(),
+            "nick_name" => $request->getNickName(),
+            "email" => $request->getEmail()
+        ]);
 
         $this->setAuditableInformationFromRequest($user, $request);
 
@@ -63,12 +47,5 @@ class UserRepository extends BaseRepository implements IUserRepository
         $user->last()->oAuth()->delete();
 
         return $user->last();
-    }
-
-    private function getParameter(string $keyword) {
-        return [
-            'name' => '%' . $keyword . '%',
-            'email' => '%' . $keyword . '%'
-        ];
     }
 }

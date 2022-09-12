@@ -2,25 +2,34 @@
 
 namespace App\Service;
 
+use App\Application\Log\LogActivity;
+use App\Application\Log\LogActivityBuilder;
 use App\Application\Request\Auth\LoginDataRequest;
 use App\Application\Request\Auth\LogoutDataRequest;
+use App\Core\Application\LogLevel;
 use App\Core\Application\Response\BasicResponse;
 use App\Core\Application\Response\GenericObjectResponse;
 use App\Core\Application\Response\HttpResponseType;
+use App\Repository\Contract\IAuditLogRepository;
 use App\Repository\Contract\IUserRepository;
 use App\Service\Contract\IAuthService;
+use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Laravel\Passport\Client as OClient;
 
 class AuthService implements IAuthService
 {
     public IUserRepository $userRepository;
+    public IAuditLogRepository $auditLogRepository;
 
-    public function __construct(IUserRepository $userRepository)
+    public function __construct(IUserRepository $userRepository,
+        IAuditLogRepository $auditLogRepository)
     {
         $this->userRepository = $userRepository;
+        $this->auditLogRepository = $auditLogRepository;
     }
 
     public function login(LoginDataRequest $request): GenericObjectResponse
@@ -43,7 +52,7 @@ class AuthService implements IAuthService
                 $response->setType("ERROR");
                 $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
 
-                Log::info(implode(", ", $response->getMessageResponseError()));
+                Log::info("Invalid field validation", $response->getMessageResponseError());
 
                 return $response;
             }
@@ -52,6 +61,8 @@ class AuthService implements IAuthService
                 $response->addErrorMessageResponse('Login invalid');
                 $response->setType("ERROR");
                 $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+
+                Log::info("Invalid auth attempt", [$response->getMessageResponseErrorLatest()]);
 
                 return $response;
             }
@@ -86,15 +97,31 @@ class AuthService implements IAuthService
             $response->setType("SUCCESS");
             $response->setCodeStatus(HttpResponseType::SUCCESS->value);
 
-            Log::info("Login succeed");
+            Log::info("User $user->id: Login succeed", ["email" => $login["email"]]);
+
+            DB::beginTransaction();
+
+            $logActivity = (new LogActivityBuilder())
+                ->setAuditLogableId($user->id)
+                ->setAuditLogableType("Domain/User")
+                ->setLevel(LogLevel::INFO->value)
+                ->setLoggedAt(Carbon::now()->toDateTimeString())
+                ->setMessage("User $user->id: Login succeed")
+                ->setContext(["email" => $user->email]);
+
+            $this->auditLogRepository->writeLogActivity($logActivity->build());
 
         } catch (\Exception $ex) {
-            Log::info($ex->getMessage());
+            DB::rollBack();
 
             $response->addErrorMessageResponse($ex->getMessage());
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+
+            Log::error($ex->getMessage());
         }
+
+        DB::commit();
 
         return $response;
     }
@@ -118,7 +145,7 @@ class AuthService implements IAuthService
                 $response->setType("ERROR");
                 $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
 
-                Log::info(implode(", ", $response->getMessageResponseError()));
+                Log::info("Invalid field validation", $response->getMessageResponseError());
 
                 return $response;
             }
@@ -130,7 +157,7 @@ class AuthService implements IAuthService
                 $response->setType("ERROR");
                 $response->setCodeStatus(HttpResponseType::NOT_FOUND->value);
 
-                Log::info(implode(", ", $response->getMessageResponseError()));
+                Log::info("User not found", [$response->getMessageResponseErrorLatest()]);
 
                 return $response;
             }
@@ -139,15 +166,31 @@ class AuthService implements IAuthService
             $response->setType("SUCCESS");
             $response->setCodeStatus(HttpResponseType::SUCCESS->value);
 
-            Log::info("Logout succeed");
+            Log::info("User $user->id: Logout succeed", ["email" => $user->email]);
+
+            DB::beginTransaction();
+
+            $logActivity = (new LogActivityBuilder())
+                ->setAuditLogableId($user->id)
+                ->setAuditLogableType("Domain/User")
+                ->setLevel(LogLevel::INFO->value)
+                ->setLoggedAt(Carbon::now()->toDateTimeString())
+                ->setMessage("User $user->id: Logout succeed")
+                ->setContext(["email" => $user->email]);
+
+            $this->auditLogRepository->writeLogActivity($logActivity->build());
 
         } catch (\Exception $ex) {
-            Log::info($ex->getMessage());
+            DB::rollBack();
 
             $response->addErrorMessageResponse($ex->getMessage());
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+
+            Log::info($ex->getMessage());
         }
+
+        DB::commit();
 
         return $response;
     }

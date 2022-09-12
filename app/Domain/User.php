@@ -6,13 +6,14 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Core\Domain\BaseAuthEntity;
 use App\Core\Domain\Contract\IAggregateRoot;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 
 
 class User extends BaseAuthEntity implements IAggregateRoot, MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     const TABLE_NAME = 'users';
     const MORPH_NAME = 'users';
