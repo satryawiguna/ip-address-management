@@ -3,6 +3,7 @@
 use App\Presentation\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Presentation\Http\Controllers\Api\V1\Auth\UserController;
 use App\Presentation\Http\Controllers\Api\V1\Manage\IpAddressController;
+use App\Presentation\Http\Controllers\Api\V1\Manage\LabelController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,8 +38,11 @@ Route::group(['prefix' => 'manage'], function () {
         });
 
         Route::post('/ip/', [IpAddressController::class, "actionStore"])->name('api.manage.ip.store');
-        Route::put('/ip/', [IpAddressController::class, "actionStore"])->name('api.manage.ip.update');
+        Route::put('/ip/{id}', [IpAddressController::class, "actionUpdate"])->name('api.manage.ip.update');
         Route::delete('/ip/{id}', [IpAddressController::class, "actionDestroy"])->name('api.manage.ip.destroy');
+
+
+        Route::get('/label/', [LabelController::class, "actionAll"])->name('api.manage.label.all');
     });
 });
 

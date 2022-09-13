@@ -32,7 +32,7 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
 
     public function findById(int|string $id): BaseEntity|null
     {
-         $this->ipAddress->with(["labels", "auditLogs"])
+        return  $this->ipAddress->with(["labels", "auditLogs"])
             ->find($id);
     }
 
@@ -40,7 +40,8 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
     {
         $parameter = $this->getParameter($keyword);
 
-        $result = $this->ipAddress->whereRaw("(ipv4 LIKE ?)", $parameter);
+        $result = $this->ipAddress->with(["labels", "auditLogs"])
+            ->whereRaw("(ipv4 LIKE ?)", $parameter);
 
         if (array_key_exists("label", $args)) {
             $result = $result->whereHas("labels", function($query) use($args) {
@@ -56,7 +57,8 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
     {
         $parameter = $this->getParameter($keyword);
 
-        $result = $this->ipAddress->whereRaw("(ipv4 LIKE ?)", $parameter);
+        $result = $this->ipAddress->with(["labels", "auditLogs"])
+            ->whereRaw("(ipv4 LIKE ?)", $parameter);
 
         if (array_key_exists("label", $args)) {
             $result = $result->whereHas("labels", function($query) use($args) {
@@ -129,14 +131,16 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
 
         $ipAddress->save();
 
-        $ipAddress->labels->sync($labels->toArray());
+        $ipAddress->labels()->sync($labels->toArray());
 
         return $ipAddress->fresh();
     }
 
     public function delete(int $id): int
     {
-        // TODO: Implement delete() method.
+        $ipAddress = $this->ipAddress->find($id);
+
+        return $ipAddress->delete();
     }
 
     private function getParameter(string $keyword) {

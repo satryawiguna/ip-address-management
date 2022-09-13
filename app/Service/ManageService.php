@@ -8,6 +8,7 @@ use App\Application\Request\UpdateIpAddressDataRequest;
 use App\Core\Application\LogLevel;
 use App\Core\Application\Request\SearchPageRequest;
 use App\Core\Application\Request\SearchRequest;
+use App\Core\Application\Response\BasicResponse;
 use App\Core\Application\Response\GenericListResponse;
 use App\Core\Application\Response\GenericListSearchPageResponse;
 use App\Core\Application\Response\GenericListSearchResponse;
@@ -15,6 +16,7 @@ use App\Core\Application\Response\GenericObjectResponse;
 use App\Core\Application\Response\HttpResponseType;
 use App\Repository\Contract\IAuditLogRepository;
 use App\Repository\Contract\IIpAddressRepository;
+use App\Repository\Contract\ILabelRepository;
 use App\Service\Contract\IManageService;
 use Carbon\Carbon;
 use Exception;
@@ -25,14 +27,19 @@ use Illuminate\Support\Facades\Log;
 class ManageService implements IManageService
 {
     public IIpAddressRepository $ipAddressRepository;
+
     public IAuditLogRepository $auditLogRepository;
+
+    public ILabelRepository $labelRepository;
 
 
     public function __construct(IIpAddressRepository $ipAddressRepository,
-                                IAuditLogRepository $auditLogRepository)
+                                IAuditLogRepository $auditLogRepository,
+                                ILabelRepository $labelRepository)
     {
         $this->ipAddressRepository = $ipAddressRepository;
         $this->auditLogRepository = $auditLogRepository;
+        $this->labelRepository = $labelRepository;
     }
 
 
@@ -52,7 +59,7 @@ class ManageService implements IManageService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         return $response;
@@ -84,7 +91,7 @@ class ManageService implements IManageService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         return $response;
@@ -107,7 +114,7 @@ class ManageService implements IManageService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         return $response;
@@ -136,7 +143,7 @@ class ManageService implements IManageService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         return $response;
@@ -202,7 +209,7 @@ class ManageService implements IManageService
 
             $logActivity = (new LogActivityBuilder())
                 ->setAuditLogableId($ipAddress->id)
-                ->setAuditLogableType("Domain/IpAddress")
+                ->setAuditLogableType("App\Domain\IpAddress")
                 ->setLevel(LogLevel::INFO->value)
                 ->setLoggedAt(Carbon::now()->toDateTimeString())
                 ->setMessage("User $user->id: Store $ipAddress->ipv4 | $request->label succeed")
@@ -216,7 +223,7 @@ class ManageService implements IManageService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         DB::commit();
@@ -250,7 +257,7 @@ class ManageService implements IManageService
 
             $logActivity = (new LogActivityBuilder())
                 ->setAuditLogableId($ipAddress->id)
-                ->setAuditLogableType("Domain/IpAddress")
+                ->setAuditLogableType("App\Domain\IpAddress")
                 ->setLevel(LogLevel::INFO->value)
                 ->setLoggedAt(Carbon::now()->toDateTimeString())
                 ->setMessage("User $user->id: Update $ipAddress->ipv4 | $request->label succeed")
@@ -265,7 +272,7 @@ class ManageService implements IManageService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         DB::commit();
@@ -273,10 +280,70 @@ class ManageService implements IManageService
         return $response;
     }
 
-    public function destroyIpAddress(int $id): int
+    public function destroyIpAddress(int $id): BasicResponse
     {
-        // TODO: Implement destroyIpAddress() method.
+        $response = new BasicResponse();
+
+        try {
+            $user = Auth::user();
+
+            $ipAddress = $this->ipAddressRepository->findById($id);
+
+            $this->ipAddressRepository->delete($id);
+
+            $response->addSuccessMessageResponse('Destroy ip address succeed');
+            $response->setType("SUCCESS");
+            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+
+            Log::info("User $user->id: destroy ip address succeed", ["id" => $id, "ipv4" => $ipAddress->ipv4]);
+
+            DB::beginTransaction();
+
+            $logActivity = (new LogActivityBuilder())
+                ->setAuditLogableId($user->id)
+                ->setAuditLogableType("App\Domain\IpAddress")
+                ->setLevel(LogLevel::INFO->value)
+                ->setLoggedAt(Carbon::now()->toDateTimeString())
+                ->setMessage("User $user->id: destroy ip address succeed")
+                ->setContext(["id" => $id, "ipv4" => $ipAddress->ipv4]);
+
+            $this->auditLogRepository->writeLogActivity($logActivity->build());
+
+        } catch (\Exception $ex) {
+            DB::rollBack();
+
+            $response->addErrorMessageResponse($ex->getMessage());
+            $response->setType("ERROR");
+            $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+
+            Log::error($ex->getMessage());
+        }
+
+        DB::commit();
+
+        return $response;
     }
 
 
+    public function getLabelAll(): GenericListResponse
+    {
+        $response = new GenericListResponse();
+
+        try {
+            $labels = $this->labelRepository->all();
+
+            $response->dtoList = $labels;
+            $response->setType("SUCCESS");
+            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+
+        } catch (Exception $ex) {
+            $response->addErrorMessageResponse($ex->getMessage());
+            $response->setType("ERROR");
+            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+
+            Log::error($ex->getMessage());
+        }
+
+        return $response;
+    }
 }

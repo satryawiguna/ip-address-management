@@ -109,6 +109,8 @@ class IpAddressController extends ApiBaseController
             }
         }
 
+        $updateIpAddressDataRequest->setLabel($labels);
+
         $this->setRequestAuthor($updateIpAddressDataRequest);
 
         $updateIpAddressResponse = $this->manageService->updateIpAddress($updateIpAddressDataRequest);
@@ -128,5 +130,15 @@ class IpAddressController extends ApiBaseController
         }
 
         return $this->getObjectJsonResponse($ipAddress);
+    }
+
+    public function actionDestroy(int $id) {
+        $destroyIpAddressResponse = $this->manageService->destroyIpAddress($id);
+
+        if ($destroyIpAddressResponse->isError()) {
+            return $this->getErrorJsonResponse($destroyIpAddressResponse);
+        }
+
+        return $this->getSuccessLatestJsonResponse($destroyIpAddressResponse);
     }
 }
