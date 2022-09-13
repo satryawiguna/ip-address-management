@@ -60,6 +60,16 @@ class IpAddressController extends ApiBaseController
         return $this->getListSearchPageJsonResponse($ipAddresses);
     }
 
+    public function actionGet(int $id) {
+        $ipAddress = $this->manageService->getIpAddressById($id);
+
+        if ($ipAddress->isError()) {
+            return $this->getErrorJsonResponse($ipAddress);
+        }
+
+        return $this->getObjectJsonResponse($ipAddress);
+    }
+
     public function actionStore(Request $request) {
         $createIpAddressDataRequest = new CreateIpAddressDataRequest();
         $createIpAddressDataRequest->setIpv4((string) $request->input("ipv4"));
@@ -120,16 +130,6 @@ class IpAddressController extends ApiBaseController
         }
 
         return $this->getObjectJsonResponse($updateIpAddressResponse);
-    }
-
-    public function actionGet(int $id) {
-        $ipAddress = $this->manageService->getIpAddressById($id);
-
-        if ($ipAddress->isError()) {
-            return $this->getErrorJsonResponse($ipAddress);
-        }
-
-        return $this->getObjectJsonResponse($ipAddress);
     }
 
     public function actionDestroy(int $id) {
