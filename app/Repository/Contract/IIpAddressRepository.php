@@ -10,11 +10,11 @@ use Illuminate\Support\Collection;
 
 interface IIpAddressRepository
 {
-    public function findById(int|string $id): BaseEntity|null;
-
     public function allSearch(string $keyword, string $order = "id", string $sort = "asc", array $args = []): Collection;
 
     public function allSearchPage(string $keyword, int $perPage, int $page, string $order = "id", string $sort = "asc", array $args = []): Paginator;
+
+    public function findById(int|string $id): BaseEntity|null;
 
     public function save(CreateIpAddressDataRequest $request): BaseEntity;
 

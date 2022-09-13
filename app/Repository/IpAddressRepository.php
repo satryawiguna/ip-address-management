@@ -30,12 +30,6 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
         $this->labelRepository = $labelRepository;
     }
 
-    public function findById(int|string $id): BaseEntity|null
-    {
-        return  $this->ipAddress->with(["labels", "auditLogs"])
-            ->find($id);
-    }
-
     public function allSearch(string $keyword, string $order = "id", string $sort = "asc", array $args = []): Collection
     {
         $parameter = $this->getParameter($keyword);
@@ -68,6 +62,12 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
 
         return $result->orderBy($order, $sort)
             ->simplePaginate(perPage: $perPage, page: $page);
+    }
+
+    public function findById(int|string $id): BaseEntity|null
+    {
+        return  $this->ipAddress->with(["labels", "auditLogs"])
+            ->find($id);
     }
 
     public function save(CreateIpAddressDataRequest $request): BaseEntity
