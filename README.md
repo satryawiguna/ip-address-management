@@ -33,7 +33,7 @@ DB_TABLE_PREFIX=iam_
 
 ## Documentation Api
 ```
-Import file documentation on root project directory "BnPFinance.postman_collection.json" into POSTMAN
+Import file documentation on root project directory "IP Address Management.postman_collection.json" into POSTMAN
 ```
 Download file document [here](IP Address Management.postman_collection)
 
