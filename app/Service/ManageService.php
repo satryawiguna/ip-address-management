@@ -349,7 +349,7 @@ class ManageService implements IManageService
         return $response;
     }
 
-    public function getLabelSearch(SearchRequest $searchRequest): GenericListSearchPageResponse
+    public function getLabelSearch(SearchRequest $searchRequest): GenericListSearchResponse
     {
         $response = new GenericListSearchResponse();
 

@@ -67,12 +67,10 @@ class AuthService implements IAuthService
                 return $response;
             }
 
-            $user = Auth::user();
-
             $oClient = OClient::where('password_client', 1)->first();
 
             $http = new Client(['verify' => false]);
-            $oauthResponse = $http->request('POST', 'iam_server/oauth/token', [
+            $oauthResponse = $http->post('iam_server/oauth/token', [
                 'form_params' => [
                     'grant_type' => 'password',
                     'client_id' => $oClient->id,
@@ -84,6 +82,8 @@ class AuthService implements IAuthService
             ]);
 
             $token = json_decode((string) $oauthResponse->getBody(),true);
+
+            $user = Auth::user();
 
             $login = [
                 'full_name' => $user->full_name,

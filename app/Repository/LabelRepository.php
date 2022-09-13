@@ -3,7 +3,7 @@
 namespace App\Repository;
 
 use App\Application\Request\CreateLabelDataRequest;
-use App\Application\Request\UpdateIpAddressDataRequest;
+use App\Application\Request\UpdateLabelDataRequest;
 use App\Core\Domain\BaseEntity;
 use App\Domain\Label;
 use App\Repository\Contract\ILabelRepository;
@@ -63,7 +63,7 @@ class LabelRepository extends BaseRepository implements ILabelRepository
         return $label->fresh();
     }
 
-    public function update(UpdateIpAddressDataRequest $request): BaseEntity|null
+    public function update(UpdateLabelDataRequest $request): BaseEntity|null
     {
         $label = $this->label->find($request->getId());
 
@@ -71,6 +71,7 @@ class LabelRepository extends BaseRepository implements ILabelRepository
             return null;
         }
 
+        $label->setAttribute("title", $request->getTitle());
         $this->setAuditableInformationFromRequest($label, $request);
 
         $label->save();

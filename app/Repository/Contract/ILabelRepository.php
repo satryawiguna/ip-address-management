@@ -3,7 +3,7 @@
 namespace App\Repository\Contract;
 
 use App\Application\Request\CreateLabelDataRequest;
-use App\Application\Request\UpdateIpAddressDataRequest;
+use App\Application\Request\UpdateLabelDataRequest;
 use App\Core\Domain\BaseEntity;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -18,7 +18,7 @@ interface ILabelRepository
 
     public function save(CreateLabelDataRequest $request): BaseEntity;
 
-    public function update(UpdateIpAddressDataRequest $request): BaseEntity|null;
+    public function update(UpdateLabelDataRequest $request): BaseEntity|null;
 
     public function delete(int $id): int;
 }
