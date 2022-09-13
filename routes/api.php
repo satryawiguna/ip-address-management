@@ -43,6 +43,16 @@ Route::group(['prefix' => 'manage'], function () {
 
 
         Route::get('/label/', [LabelController::class, "actionAll"])->name('api.manage.label.all');
+        Route::get('/label/{id}', [LabelController::class, "actionGet"])->name('api.manage.label.get');
+        Route::post('/label/search', [LabelController::class, "actionSearch"])->name('api.manage.label.search');
+
+        Route::group(['prefix' => 'label'], function () {
+            Route::post('/search/page/{perPage}/{page}/{order?}/{sort?}', [LabelController::class, "actionSearchPage"])->name('api.manage.label.search.page');
+        });
+
+        Route::post('/label/', [LabelController::class, "actionStore"])->name('api.manage.label.store');
+        Route::put('/label/{id}', [LabelController::class, "actionUpdate"])->name('api.manage.label.update');
+        Route::delete('/label/{id}', [LabelController::class, "actionDestroy"])->name('api.manage.label.destroy');
     });
 });
 

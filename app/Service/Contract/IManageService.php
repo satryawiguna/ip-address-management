@@ -33,7 +33,7 @@ interface IManageService
 
     public function getLabelAll(): GenericListResponse;
 
-    public function getLabelSearch(SearchRequest $searchRequest): GenericListSearchPageResponse;
+    public function getLabelSearch(SearchRequest $searchRequest): GenericListSearchResponse;
 
     public function getLabelSearchPage(SearchPageRequest $searchPageRequest): GenericListSearchPageResponse;
 

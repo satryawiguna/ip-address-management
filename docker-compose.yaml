@@ -9,15 +9,6 @@ services:
     restart: unless-stopped
     tty: true
     working_dir: /var/www
-    env_file:
-      - .env
-    environment:
-      - APP_URL=${APP_URL}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
     volumes:
       - ./:/var/www
       - ./Docker/php/php.ini:/usr/local/etc/php/app.conf/php.ini
@@ -63,24 +54,22 @@ services:
 
   database:
     container_name: iam_mysql
-    image: mysql:5.7.22
+    image: mysql
     restart: always
     tty: true
     env_file:
       - .env
     ports:
       - "3307:3306"
+    command: --default-authentication-plugin=mysql_native_password
     volumes:
-      - database:/var/lib/mysql/
+      - ./Docker/mysql/db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./Docker/mysql/mysql.conf:/etc/mysql/mysql.conf
-      - ./Docker/mysql/db/:/docker-entrypoint-initdb.d/
+      - database:/var/lib/mysql/
     environment:
-      - MYSQL_USER=${DB_USERNAME}
       - MYSQL_PASSWORD=${DB_PASSWORD}
       - MYSQL_DATABASE=${DB_DATABASE}
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-      - SERVICE_TAGS=dev
-      - SERVICE_NAME=mysql
     networks:
       - iam_network
 
