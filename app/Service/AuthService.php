@@ -103,7 +103,7 @@ class AuthService implements IAuthService
 
             $logActivity = (new LogActivityBuilder())
                 ->setAuditLogableId($user->id)
-                ->setAuditLogableType("Domain/User")
+                ->setAuditLogableType("App\Domain\User")
                 ->setLevel(LogLevel::INFO->value)
                 ->setLoggedAt(Carbon::now()->toDateTimeString())
                 ->setMessage("User $user->id: Login succeed")
@@ -172,7 +172,7 @@ class AuthService implements IAuthService
 
             $logActivity = (new LogActivityBuilder())
                 ->setAuditLogableId($user->id)
-                ->setAuditLogableType("Domain/User")
+                ->setAuditLogableType("App\Domain\User")
                 ->setLevel(LogLevel::INFO->value)
                 ->setLoggedAt(Carbon::now()->toDateTimeString())
                 ->setMessage("User $user->id: Logout succeed")
@@ -187,7 +187,7 @@ class AuthService implements IAuthService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         DB::commit();

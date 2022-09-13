@@ -40,7 +40,7 @@ class LogService implements ILogService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         return $response;
@@ -63,7 +63,7 @@ class LogService implements ILogService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         return $response;
@@ -88,7 +88,7 @@ class LogService implements ILogService
             $response->setType("ERROR");
             $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
 
-            Log::info($ex->getMessage());
+            Log::error($ex->getMessage());
         }
 
         return $response;

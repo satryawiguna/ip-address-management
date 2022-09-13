@@ -6,6 +6,7 @@ use App\Application\Request\CreateIpAddressDataRequest;
 use App\Application\Request\UpdateIpAddressDataRequest;
 use App\Core\Application\Request\SearchPageRequest;
 use App\Core\Application\Request\SearchRequest;
+use App\Core\Application\Response\BasicResponse;
 use App\Core\Application\Response\GenericListResponse;
 use App\Core\Application\Response\GenericListSearchPageResponse;
 use App\Core\Application\Response\GenericListSearchResponse;
@@ -25,5 +26,8 @@ interface IManageService
 
     public function updateIpAddress(UpdateIpAddressDataRequest $request): GenericObjectResponse;
 
-    public function destroyIpAddress(int $id): int;
+    public function destroyIpAddress(int $id): BasicResponse;
+
+
+    public function getLabelAll(): GenericListResponse;
 }
