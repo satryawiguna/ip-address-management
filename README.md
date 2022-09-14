@@ -29,6 +29,10 @@ DB_USERNAME=root
 DB_PASSWORD=root
 DB_TABLE_PREFIX=iam_
 
+REDIS_HOST=iam_redis
+REDIS_PASSWORD=12345
+REDIS_PORT=6379
+
 ```
 
 ## Documentation Api
