@@ -11,7 +11,9 @@ use App\Core\Application\Response\HttpResponseType;
 use App\Repository\Contract\IAuditLogRepository;
 use App\Service\Contract\ILogService;
 use Exception;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class LogService implements ILogService
 {
@@ -51,7 +53,15 @@ class LogService implements ILogService
         $response = new GenericListSearchResponse();
 
         try {
-            $auditLogs = $this->auditLogRepository->allSearch($searchRequest->getSearch());
+            $cached = Redis::get('log:search:' . $searchRequest->getSearch());
+
+            if ($cached) {
+                $auditLogs = new Collection(json_decode($cached, FALSE));
+            } else {
+                $auditLogs = $this->auditLogRepository->allSearch($searchRequest->getSearch());
+
+                Redis::set('log:search:' . $searchRequest->getSearch(), json_encode($auditLogs->toArray()));
+            }
 
             $response->dtoListSearch = $auditLogs;
             $response->totalCount = $auditLogs->count();
