@@ -22,7 +22,7 @@ class AuditLogRepository extends BaseRepository implements IAuditLogRepository
     {
         $parameter = $this->getParameter($keyword);
 
-        $result = $this->auditLog->whereRaw("(tag LIKE ? OR context LIKE ?)", $parameter);
+        $result = $this->auditLog->whereRaw("(message LIKE ? OR context LIKE ?)", $parameter);
 
         if (array_key_exists("type", $args)) {
             $result = $result->where("audit_logable_type", $args["type"]);

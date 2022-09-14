@@ -2,6 +2,7 @@
 
 use App\Presentation\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Presentation\Http\Controllers\Api\V1\Auth\UserController;
+use App\Presentation\Http\Controllers\Api\V1\Manage\AuditLogController;
 use App\Presentation\Http\Controllers\Api\V1\Manage\IpAddressController;
 use App\Presentation\Http\Controllers\Api\V1\Manage\LabelController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +54,9 @@ Route::group(['prefix' => 'manage'], function () {
         Route::post('/label/', [LabelController::class, "actionStore"])->name('api.manage.label.store');
         Route::put('/label/{id}', [LabelController::class, "actionUpdate"])->name('api.manage.label.update');
         Route::delete('/label/{id}', [LabelController::class, "actionDestroy"])->name('api.manage.label.destroy');
+
+
+        Route::post('/log/search', [AuditLogController::class, "actionSearch"])->name('api.manage.log.search');
     });
 });
 
