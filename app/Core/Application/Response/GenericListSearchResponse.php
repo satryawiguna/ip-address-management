@@ -6,11 +6,16 @@ use Illuminate\Support\Collection;
 
 class GenericListSearchResponse extends BasicResponse
 {
-    public int $totalCount;
+    private Collection $_dtoListSearch;
 
     public Collection $dtoListSearch;
 
-    public Collection $_dtoListSearch;
+    public int $totalCount;
+
+    public function getTotalCount(): int
+    {
+        return $this->totalCount;
+    }
 
     public function getDtoListSearch(): Collection
     {

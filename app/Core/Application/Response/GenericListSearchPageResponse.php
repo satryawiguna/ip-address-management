@@ -6,13 +6,23 @@ use Illuminate\Support\Collection;
 
 class GenericListSearchPageResponse extends BasicResponse
 {
+    private Collection $_dtoListSearchPage;
+
+    public Collection $dtoListSearchPage;
+
     public int $totalCount;
 
     public array $meta;
 
-    public Collection $dtoListSearchPage;
+    public function getTotalCount(): int
+    {
+        return $this->totalCount;
+    }
 
-    public Collection $_dtoListSearchPage;
+    public function getMeta(): array
+    {
+        return $this->meta;
+    }
 
     public function getDtoListSearchPage(): Collection
     {

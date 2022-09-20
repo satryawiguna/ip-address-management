@@ -25,6 +25,7 @@ Route::group(['prefix' => 'auth'], function () {
 
     Route::group(['middleware' => 'auth:api'], function () {
         Route::post('/logout', [AuthController::class, "actionLogout"])->name('api.auth.logout');
+        Route::post('/refresh-token', [AuthController::class, "actionRefreshToken"])->name('api.auth.refreshToken');
     });
 });
 

@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Application\Log\LogActivity;
 use App\Application\Log\LogActivityBuilder;
 use App\Application\Request\Auth\LoginDataRequest;
 use App\Application\Request\Auth\LogoutDataRequest;
@@ -14,9 +13,10 @@ use App\Repository\Contract\IAuditLogRepository;
 use App\Repository\Contract\IUserRepository;
 use App\Service\Contract\IAuthService;
 use Carbon\Carbon;
-use GuzzleHttp\Client;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Laravel\Passport\Client as OClient;
 
@@ -67,21 +67,30 @@ class AuthService implements IAuthService
                 return $response;
             }
 
-            $oClient = OClient::where('password_client', 1)->first();
+            $oClient = new OClient();
+            $oClient->setKeyType("string");
+            $oClient = $oClient->where('password_client', 1)->first();
 
-            $http = new Client(['verify' => false]);
-            $oauthResponse = $http->post('iam_server/oauth/token', [
-                'form_params' => [
-                    'grant_type' => 'password',
-                    'client_id' => $oClient->id,
-                    'client_secret' => $oClient->secret,
-                    'username' => $request->getEmail(),
-                    'password' => $request->getPassword(),
-                    'scope' => '*',
-                ],
+            $oauthResponse = Http::asForm()->post('iam_server/oauth/token', [
+                'grant_type' => 'password',
+                'client_id' => $oClient->id,
+                'client_secret' => $oClient->secret,
+                'username' => $request->getEmail(),
+                'password' => $request->getPassword(),
+                'scope' => '*',
             ]);
 
-            $token = json_decode((string) $oauthResponse->getBody(),true);
+            if (property_exists(json_decode($oauthResponse), "error")) {
+                $response->addErrorMessageResponse(json_decode($oauthResponse)->message);
+                $response->setType("ERROR");
+                $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+
+                Log::info("Invalid client", [json_decode($oauthResponse)->message]);
+
+                return $response;
+            }
+
+            $token = $oauthResponse->json();
 
             $user = Auth::user();
 
@@ -195,4 +204,41 @@ class AuthService implements IAuthService
         return $response;
     }
 
+    public function refreshToken(string $token): GenericObjectResponse
+    {
+        $response = new GenericObjectResponse();
+
+        try {
+            $oClient = new OClient();
+            $oClient->setKeyType("string");
+            $oClient = $oClient->where('password_client', 1)->first();
+
+            $oauthResponse = Http::asForm()->post('iam_server/oauth/token', [
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $token,
+                'client_id' => $oClient->id,
+                'client_secret' => $oClient->secret,
+                'scope' => '*',
+            ]);
+
+            $token = $oauthResponse->json();
+
+            $refresh = [
+                'token' => $token
+            ];
+
+            $response->dto = (object) $refresh;
+            $response->addSuccessMessageResponse('Token refreshed');
+            $response->setType("SUCCESS");
+            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+        } catch (\Exception $ex) {
+            $response->addErrorMessageResponse($ex->getMessage());
+            $response->setType("ERROR");
+            $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+
+            Log::error($ex->getMessage());
+        }
+
+        return $response;
+    }
 }
