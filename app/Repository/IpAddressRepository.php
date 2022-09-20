@@ -66,7 +66,8 @@ class IpAddressRepository extends BaseRepository implements IIpAddressRepository
 
     public function findById(int|string $id): BaseEntity|null
     {
-        return  $this->ipAddress->with(["labels", "auditLogs"])
+        return  $this->ipAddress
+            ->with(["labels", "auditLogs"])
             ->find($id);
     }
 

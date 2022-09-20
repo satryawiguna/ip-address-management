@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use App\Application\Exceptions\ResponseBadRequestException;
+use App\Application\Exceptions\ResponseNotFoundException;
 use App\Application\Log\LogActivityBuilder;
 use App\Application\Request\CreateIpAddressDataRequest;
 use App\Application\Request\CreateLabelDataRequest;
@@ -22,11 +24,14 @@ use App\Repository\Contract\ILabelRepository;
 use App\Service\Contract\IManageService;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
-class ManageService implements IManageService
+class ManageService extends BaseService implements IManageService
 {
     public IIpAddressRepository $ipAddressRepository;
 
@@ -52,14 +57,16 @@ class ManageService implements IManageService
         try {
             $ipAddresses = $this->ipAddressRepository->all();
 
-            $response->dtoList = $ipAddresses;
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListResponse($response,
+                $ipAddresses,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -74,15 +81,17 @@ class ManageService implements IManageService
         try {
             $ipAddresses = $this->ipAddressRepository->allSearch($searchRequest->getSearch());
 
-            $response->dtoListSearch = $ipAddresses;
-            $response->totalCount = $ipAddresses->count();
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListSearchResponse($response,
+                $ipAddresses,
+                $ipAddresses->count(),
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -99,19 +108,18 @@ class ManageService implements IManageService
                 $searchPageRequest->getPerPage(),
                 $searchPageRequest->getPage());
 
-            $response->dtoListSearchPage = $ipAddresses->getCollection();
-            $response->totalCount = $ipAddresses->count();
-            $response->meta = [
-                "perPage" => $ipAddresses->perPage(),
-                "currentPage" => $ipAddresses->currentPage()
-            ];
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListSearchPageResponse($response,
+                $ipAddresses->getCollection(),
+                $ipAddresses->count(),
+                ["perPage" => $ipAddresses->perPage(), "currentPage" => $ipAddresses->currentPage()],
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -127,23 +135,27 @@ class ManageService implements IManageService
             $ipAddress = $this->ipAddressRepository->findById($id);
 
             if (!$ipAddress) {
-                $response->addErrorMessageResponse("Ip Address not found");
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
-
-                Log::info("Ip Address not found", $response->getMessageResponseError());
-
-                return $response;
+                throw new ResponseNotFoundException("Ip Address not found");
             }
 
-            $response->dto = $ipAddress;
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $ipAddress,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
+
+        } catch (ResponseNotFoundException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::NOT_FOUND->value,
+                $ex->getMessage());
+
+            Log::info($ex->getMessage(), $response->getMessageResponseError());
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -164,18 +176,7 @@ class ManageService implements IManageService
             ]);
 
             if ($brokenRules->fails()) {
-                foreach ($brokenRules->errors()->getMessages() as $key => $value) {
-                    foreach ($value as $message) {
-                        $response->addErrorMessageResponse($message);
-                    }
-                }
-
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
-
-                Log::info("Invalid field validation", $response->getMessageResponseError());
-
-                return $response;
+                throw new ResponseBadRequestException($brokenRules->errors()->getMessages());
             }
 
             foreach ($request->getLabel()->toArray() as $label) {
@@ -183,18 +184,7 @@ class ManageService implements IManageService
                 $brokenRules = $label->getBrokenRules($rule);
 
                 if ($brokenRules->fails()) {
-                    foreach ($brokenRules->errors()->getMessages() as $key => $value) {
-                        foreach ($value as $message) {
-                            $response->addErrorMessageResponse($message);
-                        }
-                    }
-
-                    $response->setType("ERROR");
-                    $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
-
-                    Log::info("Invalid field validation", $response->getMessageResponseError());
-
-                    return $response;
+                    throw new ResponseBadRequestException($brokenRules->errors()->getMessages());
                 }
             }
 
@@ -202,10 +192,10 @@ class ManageService implements IManageService
 
             $ipAddress = $this->ipAddressRepository->save($request);
 
-            $response->dto = $ipAddress;
-            $response->addSuccessMessageResponse('Ip Address store succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $ipAddress,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
             Log::info("Ip Address store succeed");
 
@@ -218,12 +208,21 @@ class ManageService implements IManageService
                 ->setContext(["ipv4" => $ipAddress->ipv4, "label" => $request->label]);
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
+        } catch (ResponseBadRequestException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::BAD_REQUEST->value,
+                $ex->getMessages());
+
+            Log::info("Invalid field validation", $response->getMessageResponseError());
+
         } catch (Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -245,15 +244,13 @@ class ManageService implements IManageService
             $ipAddress = $this->ipAddressRepository->update($request);
 
             if (!$ipAddress) {
-                $response->addErrorMessageResponse('Ip Address not found');
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::NOT_FOUND->value);
+                throw new ResponseNotFoundException('Ip Address not found');
             }
 
-            $response->dto = $ipAddress;
-            $response->addSuccessMessageResponse('Ip Address update succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $ipAddress,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
             Log::info("Ip Address update succeed");
 
@@ -267,12 +264,27 @@ class ManageService implements IManageService
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
 
+        } catch(QueryException) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                'Duplicate entry detected');
+
+        } catch (ResponseNotFoundException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::NOT_FOUND->value,
+                $ex->getMessage());
+
+            Log::info($ex->getMessage(), $response->getMessageResponseError());
+
         } catch (Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -291,11 +303,16 @@ class ManageService implements IManageService
 
             $ipAddress = $this->ipAddressRepository->findById($id);
 
+            if (!$ipAddress) {
+                throw new ResponseNotFoundException('Ip Address not found');
+            }
+
             $this->ipAddressRepository->delete($id);
 
-            $response->addSuccessMessageResponse('Destroy ip address ' . $ipAddress->id . ' succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setMessageResponse($response,
+                "SUCCESS",
+                HttpResponseType::SUCCESS->value,
+                'Destroy ip address ' . $ipAddress->id . ' succeed');
 
             Log::info("User $user->id: destroy ip address succeed", ["id" => $id, "ipv4" => $ipAddress->ipv4]);
 
@@ -311,12 +328,21 @@ class ManageService implements IManageService
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
 
+        } catch (ResponseNotFoundException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::NOT_FOUND->value,
+                $ex->getMessage());
+
+            Log::info($ex->getMessage(), $response->getMessageResponseError());
+
         } catch (\Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -334,14 +360,16 @@ class ManageService implements IManageService
         try {
             $labels = $this->labelRepository->all();
 
-            $response->dtoList = $labels;
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListResponse($response,
+                $labels,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -356,15 +384,17 @@ class ManageService implements IManageService
         try {
             $labels = $this->labelRepository->allSearch($searchRequest->getSearch());
 
-            $response->dtoListSearch = $labels;
-            $response->totalCount = $labels->count();
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListSearchResponse($response,
+                $labels->getCollection(),
+                $labels->count(),
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -381,19 +411,18 @@ class ManageService implements IManageService
                 $searchPageRequest->getPerPage(),
                 $searchPageRequest->getPage());
 
-            $response->dtoListSearchPage = $labels->getCollection();
-            $response->totalCount = $labels->count();
-            $response->meta = [
-                "perPage" => $labels->perPage(),
-                "currentPage" => $labels->currentPage()
-            ];
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListSearchPageResponse($response,
+                $labels->getCollection(),
+                $labels->count(),
+                ["perPage" => $labels->perPage(), "currentPage" => $labels->currentPage()],
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -409,23 +438,26 @@ class ManageService implements IManageService
             $label = $this->labelRepository->findById($id);
 
             if (!$label) {
-                $response->addErrorMessageResponse("Label not found");
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
-
-                Log::info("Label not found", $response->getMessageResponseError());
-
-                return $response;
+                throw new ResponseNotFoundException("Label not found");
             }
 
-            $response->dto = $label;
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $label,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
+        } catch (ResponseNotFoundException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::NOT_FOUND->value,
+                $ex->getMessage());
+
+            Log::info($ex->getMessage(), $response->getMessageResponseError());
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -445,28 +477,17 @@ class ManageService implements IManageService
             ]);
 
             if ($brokenRules->fails()) {
-                foreach ($brokenRules->errors()->getMessages() as $key => $value) {
-                    foreach ($value as $message) {
-                        $response->addErrorMessageResponse($message);
-                    }
-                }
-
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
-
-                Log::info("Invalid field validation", $response->getMessageResponseError());
-
-                return $response;
+                throw new ResponseBadRequestException($brokenRules->errors()->getMessages());
             }
 
             $user = Auth::user();
 
             $label = $this->labelRepository->save($request);
 
-            $response->dto = $label;
-            $response->addSuccessMessageResponse('Label store succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $label,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
             Log::info("Label store succeed");
 
@@ -479,12 +500,21 @@ class ManageService implements IManageService
                 ->setContext(["title" => $label->title]);
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
+        } catch (ResponseBadRequestException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::BAD_REQUEST->value,
+                $ex->getMessages());
+
+            Log::info("Invalid field validation", $response->getMessageResponseError());
+
         } catch (Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -506,15 +536,13 @@ class ManageService implements IManageService
             $label = $this->labelRepository->update($request);
 
             if (!$label) {
-                $response->addErrorMessageResponse('Label not found');
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::NOT_FOUND->value);
+                throw new ResponseNotFoundException('Label not found');
             }
 
-            $response->dto = $label;
-            $response->addSuccessMessageResponse('Label update succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $label,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
             Log::info("Label update succeed");
 
@@ -528,12 +556,27 @@ class ManageService implements IManageService
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
 
+        } catch(QueryException) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                'Duplicate entry detected');
+
+        } catch (ResponseNotFoundException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::NOT_FOUND->value,
+                $ex->getMessage());
+
+            Log::info($ex->getMessage(), $response->getMessageResponseError());
+
         } catch (Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -552,11 +595,16 @@ class ManageService implements IManageService
 
             $label = $this->labelRepository->findById($id);
 
+            if (!$label) {
+                throw new ResponseNotFoundException('Label not found');
+            }
+
             $this->labelRepository->delete($id);
 
-            $response->addSuccessMessageResponse('Destroy label ' . $label->id . ' succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setMessageResponse($response,
+                "SUCCESS",
+                HttpResponseType::SUCCESS->value,
+                'Destroy label ' . $label->id . ' succeed');
 
             Log::info("User $user->id: destroy label succeed", ["id" => $id, "title" => $label->title]);
 
@@ -572,12 +620,21 @@ class ManageService implements IManageService
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
 
+        } catch (ResponseNotFoundException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::NOT_FOUND->value,
+                $ex->getMessage());
+
+            Log::info($ex->getMessage(), $response->getMessageResponseError());
+
         } catch (\Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }

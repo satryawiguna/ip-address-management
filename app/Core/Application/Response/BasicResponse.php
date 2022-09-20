@@ -6,13 +6,17 @@ use Illuminate\Support\Collection;
 
 class BasicResponse
 {
-    private string $type;
+    private string $_type;
 
-    private int $codeStatus;
+    public string $type;
 
-    public Collection $messages;
+    private int $_codeStatus;
+
+    public int $codeStatus;
 
     private Collection $_messages;
+
+    public Collection $messages;
 
 
     public function __construct()
@@ -23,22 +27,12 @@ class BasicResponse
 
     public function getType(): string
     {
-        return $this->type;
-    }
-
-    public function setType(string $type): void
-    {
-        $this->type = $type;
+        return $this->_type;
     }
 
     public function getCodeStatus(): int
     {
-        return $this->codeStatus;
-    }
-
-    public function setCodeStatus(int $codeStatus): void
-    {
-        $this->codeStatus = $codeStatus;
+        return $this->_codeStatus;
     }
 
     public function getMessages(): Collection

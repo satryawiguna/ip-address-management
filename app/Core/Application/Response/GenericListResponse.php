@@ -6,9 +6,9 @@ use Illuminate\Support\Collection;
 
 class GenericListResponse extends BasicResponse
 {
-    public Collection $dtoList;
+    private Collection $_dtoList;
 
-    public Collection $_dtoList;
+    public Collection $dtoList;
 
     public function getDtoList(): Collection
     {

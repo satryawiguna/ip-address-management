@@ -53,4 +53,21 @@ class AuthController extends ApiBaseController
 
         return $this->getSuccessLatestJsonResponse($logoutResponse);
     }
+
+    public function actionRefreshToken(Request $request) {
+        $token = $request->input('token');
+
+        $refreshResponse = $this->authService->refreshToken($token);
+
+        if ($refreshResponse->isError()) {
+            return $this->getErrorJsonResponse($refreshResponse);
+        }
+
+        $request->user()->token()->revoke();
+        Cookie::forget('refresh_token');
+
+        Cookie::queue('refresh_token', $refreshResponse->dto->token["refresh_token"], 60*24);
+
+        return $this->getObjectJsonResponse($refreshResponse);
+    }
 }
