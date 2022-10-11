@@ -57,7 +57,7 @@ class AuthService extends BaseService implements IAuthService
             $oClient->setKeyType("string");
             $oClient = $oClient->where('password_client', 1)->first();
 
-            $oauthResponse = Http::asForm()->post('iam_server/oauth/token', [
+            $oauthResponse = Http::asForm()->post(env('APP_URL') . '/oauth/token', [
                 'grant_type' => 'password',
                 'client_id' => $oClient->id,
                 'client_secret' => $oClient->secret,
