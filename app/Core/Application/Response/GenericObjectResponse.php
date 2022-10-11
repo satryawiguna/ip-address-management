@@ -4,5 +4,12 @@ namespace App\Core\Application\Response;
 
 class GenericObjectResponse extends BasicResponse
 {
-    public object $dto;
+    private $_dto;
+
+    public $dto;
+
+    public function getDto()
+    {
+        return $this->dto ?? $this->_dto = new \stdClass();
+    }
 }

@@ -19,6 +19,6 @@ class GenericListSearchResponse extends BasicResponse
 
     public function getDtoListSearch(): Collection
     {
-        return $this->_dtoListSearch ?? $this->_dtoListSearch = new Collection();
+        return $this->dtoListSearch ?? $this->_dtoListSearch = new Collection();
     }
 }

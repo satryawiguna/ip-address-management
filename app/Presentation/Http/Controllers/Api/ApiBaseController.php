@@ -3,6 +3,10 @@
 namespace App\Presentation\Http\Controllers\Api;
 
 use App\Core\Application\Response\BasicResponse;
+use App\Core\Application\Response\GenericListResponse;
+use App\Core\Application\Response\GenericListSearchPageResponse;
+use App\Core\Application\Response\GenericListSearchResponse;
+use App\Core\Application\Response\GenericObjectResponse;
 use App\Presentation\Http\Controllers\Controller;
 use App\Presentation\Http\Controllers\RequestAuthor;
 use Illuminate\Http\JsonResponse;
@@ -91,38 +95,38 @@ class ApiBaseController extends Controller
         ], $response->getCodeStatus());
     }
 
-    protected function getObjectJsonResponse(BasicResponse $response): JsonResponse {
+    protected function getObjectJsonResponse(GenericObjectResponse $response): JsonResponse {
         return response()->json([
             "type" => $response->getType(),
             "code_status" => $response->getCodeStatus(),
-            "data" => $response->dto
+            "data" => $response->getDto()
         ], $response->getCodeStatus());
     }
 
-    protected function getListJsonResponse(BasicResponse $response): JsonResponse {
+    protected function getListJsonResponse(GenericListResponse $response): JsonResponse {
         return response()->json([
             "type" => $response->getType(),
             "code_status" => $response->getCodeStatus(),
-            "datas" => $response->dtoList
+            "datas" => $response->getDtoList()
         ], $response->getCodeStatus());
     }
 
-    protected function getListSearchJsonResponse(BasicResponse $response): JsonResponse {
+    protected function getListSearchJsonResponse(GenericListSearchResponse $response): JsonResponse {
         return response()->json([
             "type" => $response->getType(),
             "code_status" => $response->getCodeStatus(),
             "total_count" => $response->totalCount,
-            "datas" => $response->dtoListSearch
+            "datas" => $response->getDtoListSearch()
         ], $response->getCodeStatus());
     }
 
-    protected function getListSearchPageJsonResponse(BasicResponse $response): JsonResponse {
+    protected function getListSearchPageJsonResponse(GenericListSearchPageResponse $response): JsonResponse {
         return response()->json([
             "type" => $response->getType(),
             "code_status" => $response->getCodeStatus(),
             "total_count" => $response->totalCount,
-            "datas" => $response->dtoListSearchPage,
-            "meta" => $response->meta
+            "meta" => $response->meta,
+            "datas" => $response->getDtoListSearchPage()
         ], $response->getCodeStatus());
     }
 }

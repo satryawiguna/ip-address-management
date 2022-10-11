@@ -12,6 +12,6 @@ class GenericListResponse extends BasicResponse
 
     public function getDtoList(): Collection
     {
-        return $this->_dtoList ?? $this->_dtoList = new Collection();
+        return $this->dtoList ?? $this->_dtoList = new Collection();
     }
 }

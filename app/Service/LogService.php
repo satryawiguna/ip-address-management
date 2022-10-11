@@ -15,7 +15,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
-class LogService implements ILogService
+class LogService extends BaseService implements ILogService
 {
     public IAuditLogRepository $auditLogRepository;
 
@@ -33,14 +33,16 @@ class LogService implements ILogService
         try {
             $auditLogs = $this->auditLogRepository->all();
 
-            $response->dtoList = $auditLogs;
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListResponse($response,
+                $auditLogs,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -63,15 +65,17 @@ class LogService implements ILogService
                 Redis::set('log:search:' . $searchRequest->getSearch(), json_encode($auditLogs->toArray()));
             }
 
-            $response->dtoListSearch = $auditLogs;
-            $response->totalCount = $auditLogs->count();
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListSearchResponse($response,
+                $auditLogs,
+                $auditLogs->count(),
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -88,15 +92,18 @@ class LogService implements ILogService
                 $searchPageRequest->getPerPage(),
                 $searchPageRequest->getPage());
 
-            $response->dtoListSearchPage = $auditLogs;
-            $response->totalCount = $auditLogs->count();
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericListSearchPageResponse($response,
+                $auditLogs,
+                $auditLogs->count(),
+                ["perPage" => $auditLogs->perPage(), "currentPage" => $auditLogs->currentPage()],
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
         } catch (Exception $ex) {
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }

@@ -26,6 +26,6 @@ class GenericListSearchPageResponse extends BasicResponse
 
     public function getDtoListSearchPage(): Collection
     {
-        return $this->_dtoListSearchPage ?? $this->_dtoListSearchPage = new Collection();
+        return $this->dtoListSearchPage ?? $this->_dtoListSearchPage = new Collection();
     }
 }
