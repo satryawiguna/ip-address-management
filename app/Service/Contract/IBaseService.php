@@ -31,7 +31,7 @@ interface IBaseService
                                                  int $codeStatus): GenericListSearchPageResponse;
 
     public function setGenericObjectResponse(GenericObjectResponse $response,
-                                             BaseEntity|null $dto,
+                                             BaseEntity|array|null $dto,
                                              string $type,
                                              int $codeStatus): GenericObjectResponse;
 

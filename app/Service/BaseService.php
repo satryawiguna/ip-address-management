@@ -56,7 +56,10 @@ abstract class BaseService implements IBaseService
         return $response;
     }
 
-    public function setGenericObjectResponse(GenericObjectResponse $response, ?BaseEntity $dto, string $type, int $codeStatus): GenericObjectResponse
+    public function setGenericObjectResponse(GenericObjectResponse $response,
+                                             BaseEntity|array|null $dto,
+                                             string $type,
+                                             int $codeStatus): GenericObjectResponse
     {
         $response->dto = $dto;
         $response->type = $type;
@@ -81,7 +84,9 @@ abstract class BaseService implements IBaseService
                 }
             }
         } else {
-            $response->addSuccessMessageResponse($message);
+            $method = "add" . ucfirst($type) . "MessageResponse";
+
+            $response->$method($message);
         }
 
         return $response;

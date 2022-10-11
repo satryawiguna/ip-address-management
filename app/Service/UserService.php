@@ -2,23 +2,17 @@
 
 namespace App\Service;
 
-use App\Application\Request\Auth\LogoutDataRequest;
+use App\Application\Exceptions\ResponseBadRequestException;
 use App\Application\Request\Auth\RegisterDataRequest;
-use App\Core\Application\Request\SearchPageRequest;
-use App\Core\Application\Request\SearchRequest;
-use App\Core\Application\Response\GenericListResponse;
-use App\Core\Application\Response\GenericListSearchPageResponse;
-use App\Core\Application\Response\GenericListSearchResponse;
 use App\Core\Application\Response\GenericObjectResponse;
 use App\Core\Application\Response\HttpResponseType;
-use App\Domain\User;
 use App\Repository\Contract\IUserRepository;
 use App\Service\Contract\IUserService;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class UserService implements IUserService
+class UserService extends BaseService implements IUserService
 {
     public IUserRepository $userRepository;
 
@@ -44,35 +38,33 @@ class UserService implements IUserService
             ]);
 
             if ($brokenRules->fails()) {
-                foreach ($brokenRules->errors()->getMessages() as $key => $value) {
-                    foreach ($value as $message) {
-                        $response->addErrorMessageResponse($message);
-                    }
-                }
-
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
-
-                Log::info("Invalid field validation", $response->getMessageResponseError());
-
-                return $response;
+                throw new ResponseBadRequestException($brokenRules->errors()->getMessages());
             }
 
             $register = $this->userRepository->register($request);
 
-            $response->dto = $register;
-            $response->addSuccessMessageResponse('User register succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $register,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
             Log::info("User register succeed");
+
+        } catch (ResponseBadRequestException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::BAD_REQUEST->value,
+                $ex->getMessages());
+
+            Log::info("Invalid field validation", $response->getMessageResponseError());
 
         } catch (Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::INTERNAL_SERVER_ERROR->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::INTERNAL_SERVER_ERROR->value,
+                $ex->getMessage());
 
             Log::info($ex->getMessage());
         }

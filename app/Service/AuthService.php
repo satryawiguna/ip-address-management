@@ -2,6 +2,10 @@
 
 namespace App\Service;
 
+use App\Application\Exceptions\ResponseBadRequestException;
+use App\Application\Exceptions\ResponseInvalidClientException;
+use App\Application\Exceptions\ResponseInvalidLoginAttemptException;
+use App\Application\Exceptions\ResponseNotFoundException;
 use App\Application\Log\LogActivityBuilder;
 use App\Application\Request\Auth\LoginDataRequest;
 use App\Application\Request\Auth\LogoutDataRequest;
@@ -13,14 +17,13 @@ use App\Repository\Contract\IAuditLogRepository;
 use App\Repository\Contract\IUserRepository;
 use App\Service\Contract\IAuthService;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Laravel\Passport\Client as OClient;
 
-class AuthService implements IAuthService
+class AuthService extends BaseService implements IAuthService
 {
     public IUserRepository $userRepository;
     public IAuditLogRepository $auditLogRepository;
@@ -43,28 +46,11 @@ class AuthService implements IAuthService
             ]);
 
             if ($brokenRules->fails()) {
-                foreach ($brokenRules->errors()->getMessages() as $key => $value) {
-                    foreach ($value as $message) {
-                        $response->addErrorMessageResponse($message);
-                    }
-                }
-
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
-
-                Log::info("Invalid field validation", $response->getMessageResponseError());
-
-                return $response;
+                throw new ResponseBadRequestException($brokenRules->errors()->getMessages());
             }
 
             if (!Auth::attempt(["email" => $request->getEmail(), "password" => $request->getPassword()])) {
-                $response->addErrorMessageResponse('Login invalid');
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
-
-                Log::info("Invalid auth attempt", [$response->getMessageResponseErrorLatest()]);
-
-                return $response;
+                throw new ResponseInvalidLoginAttemptException('Login invalid');
             }
 
             $oClient = new OClient();
@@ -80,14 +66,8 @@ class AuthService implements IAuthService
                 'scope' => '*',
             ]);
 
-            if (property_exists(json_decode($oauthResponse), "error")) {
-                $response->addErrorMessageResponse(json_decode($oauthResponse)->message);
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
-
-                Log::info("Invalid client", [json_decode($oauthResponse)->message]);
-
-                return $response;
+            if (array_key_exists("error", $oauthResponse->json())) {
+                throw new ResponseInvalidClientException($oauthResponse->json()["message"]);
             }
 
             $token = $oauthResponse->json();
@@ -101,10 +81,10 @@ class AuthService implements IAuthService
                 'token' => $token
             ];
 
-            $response->dto = (object) $login;
-            $response->addSuccessMessageResponse('Login succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $login,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
 
             Log::info("User $user->id: Login succeed", ["email" => $login["email"]]);
 
@@ -120,12 +100,35 @@ class AuthService implements IAuthService
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
 
+        } catch (ResponseBadRequestException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::BAD_REQUEST->value,
+                $ex->getMessages());
+
+            Log::info("Invalid field validation", $response->getMessageResponseError());
+
+        } catch (ResponseInvalidLoginAttemptException $ex) {
+            $response = $this->setMessageResponse($response,
+                "ERROR",
+                HttpResponseType::UNAUTHORIZED->value,
+                $ex->getMessage());
+
+            Log::info("Invalid auth attempt", [$ex->getMessage()]);
+        } catch (ResponseInvalidClientException $ex) {
+            $response = $this->setMessageResponse($response,
+                "ERROR",
+                HttpResponseType::UNAUTHORIZED->value,
+                $ex->getMessage());
+
+            Log::info("Invalid client", [$ex->getMessage()]);
         } catch (\Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::UNAUTHORIZED->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -145,35 +148,19 @@ class AuthService implements IAuthService
             ]);
 
             if ($brokenRules->fails()) {
-                foreach ($brokenRules->errors()->getMessages() as $key => $value) {
-                    foreach ($value as $message) {
-                        $response->addErrorMessageResponse($message);
-                    }
-                }
-
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::BAD_REQUEST->value);
-
-                Log::info("Invalid field validation", $response->getMessageResponseError());
-
-                return $response;
+                throw new ResponseBadRequestException($brokenRules->errors()->getMessages());
             }
 
             $user = $this->userRepository->revokeToken($request->getEmail());
 
             if (!$user) {
-                $response->addErrorMessageResponse("User not found");
-                $response->setType("ERROR");
-                $response->setCodeStatus(HttpResponseType::NOT_FOUND->value);
-
-                Log::info("User not found", [$response->getMessageResponseErrorLatest()]);
-
-                return $response;
+                throw new ResponseNotFoundException('User not found');
             }
 
-            $response->addSuccessMessageResponse('Logout succeed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setMessageResponse($response,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value,
+                'Logout succeed');
 
             Log::info("User $user->id: Logout succeed", ["email" => $user->email]);
 
@@ -189,12 +176,29 @@ class AuthService implements IAuthService
 
             $this->auditLogRepository->writeLogActivity($logActivity->build());
 
+        } catch (ResponseBadRequestException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::BAD_REQUEST->value,
+                $ex->getMessages());
+
+            Log::info("Invalid field validation", $response->getMessageResponseError());
+
+        } catch (ResponseNotFoundException $ex) {
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::NOT_FOUND->value,
+                $ex->getMessage());
+
+            Log::info($ex->getMessage(), $response->getMessageResponseError());
+
         } catch (\Exception $ex) {
             DB::rollBack();
 
-            $response->addErrorMessageResponse($ex->getMessage());
-            $response->setType("ERROR");
-            $response->setCodeStatus(HttpResponseType::UNAUTHORIZED->value);
+            $response = $this->setMessageResponse($response,
+                'ERROR',
+                HttpResponseType::UNAUTHORIZED->value,
+                $ex->getMessage());
 
             Log::error($ex->getMessage());
         }
@@ -221,16 +225,28 @@ class AuthService implements IAuthService
                 'scope' => '*',
             ]);
 
+            if (array_key_exists("error", $oauthResponse->json())) {
+                throw new ResponseInvalidClientException($oauthResponse->json()["message"]);
+            }
+
             $token = $oauthResponse->json();
 
             $refresh = [
                 'token' => $token
             ];
 
-            $response->dto = (object) $refresh;
-            $response->addSuccessMessageResponse('Token refreshed');
-            $response->setType("SUCCESS");
-            $response->setCodeStatus(HttpResponseType::SUCCESS->value);
+            $response = $this->setGenericObjectResponse($response,
+                $refresh,
+                'SUCCESS',
+                HttpResponseType::SUCCESS->value);
+
+        } catch (ResponseInvalidClientException $ex) {
+            $response = $this->setMessageResponse($response,
+                "ERROR",
+                HttpResponseType::UNAUTHORIZED->value,
+                $ex->getMessage());
+
+            Log::info("Invalid client", [$ex->getMessage()]);
         } catch (\Exception $ex) {
             $response->addErrorMessageResponse($ex->getMessage());
             $response->setType("ERROR");

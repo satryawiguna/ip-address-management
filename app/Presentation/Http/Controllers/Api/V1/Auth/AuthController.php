@@ -33,7 +33,7 @@ class AuthController extends ApiBaseController
             return $this->getErrorJsonResponse($loginResponse);
         }
 
-        Cookie::queue('refresh_token', $loginResponse->dto->token["refresh_token"], 60*24);
+        Cookie::queue('refresh_token', $loginResponse->getDto()["token"]["refresh_token"], 60*24);
 
         return $this->getObjectJsonResponse($loginResponse);
     }
@@ -66,7 +66,7 @@ class AuthController extends ApiBaseController
         $request->user()->token()->revoke();
         Cookie::forget('refresh_token');
 
-        Cookie::queue('refresh_token', $refreshResponse->dto->token["refresh_token"], 60*24);
+        Cookie::queue('refresh_token', $refreshResponse->getDto()["token"]["refresh_token"], 60*24);
 
         return $this->getObjectJsonResponse($refreshResponse);
     }
